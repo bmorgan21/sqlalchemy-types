@@ -9,9 +9,6 @@ setup(
     url='https://github.com/bmorgan21/sqlalchemy-types',
     description='More detailed types for model definitions.',
     install_requires=[
-        'validation==0.1.0'
-    ],
-    dependency_links=[
-        'https://github.com/bmorgan21/python-validation/tarball/master#egg=validation-0.1.0'
+        'validation>=0.1.0'
     ]
 )
