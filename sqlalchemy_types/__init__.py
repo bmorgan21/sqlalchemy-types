@@ -44,43 +44,6 @@ class Base(object):
 
     id = Column(tt.ObjectID(), primary_key=True)
 
-    @classproperty
-    @classmethod
-    def query(cls):
-        return cls.db_session().query(cls)
-
-    @classmethod
-    def db_session(cls):
-        return cls.__db_session__
-
-    @classmethod
-    def for_id(cls, id):
-        if id is None: return cls()
-        if isinstance(id, cls): #allows some shortcuts
-            return id
-
-        # for the query below to be cached correctly by sqlalchemy,
-        # the id needs to be an int
-        try:
-            id = int(id)
-        except ValueError:
-            pass
-        try:
-            value = cls.query.get(id)
-            if value is None: value = cls()
-            return value
-        except NoResultFound, e:
-            return cls()
-
-    @staticmethod
-    def for_type_id(type_id):
-        """Returns a object constructed for the given type"""
-        return getattr(__import__('openmile.model', globals(), locals(), [str(type_id[0])]), type_id[0]).for_id(type_id[1])
-
-    @staticmethod
-    def cls(type):
-        return getattr(__import__('openmile.model', globals(), locals(), [str(type)]), type)
-
     @staticmethod
     def create_factory(*field_args, **kwargs):
         @classmethod
@@ -110,14 +73,6 @@ class Base(object):
         """Utility method that returns a tuple containing the class name and the id of the object."""
         return (unicode(self.__class__.__name__), self.id)
 
-    def add(self):
-        self.db_session().add(self)
-        return self
-
-    def delete(self):
-        self.db_session().delete(self)
-        return self
-
     def to_json(self, recurse=None):
         result = {'id':self.id,
                   '__class__':self.__class__.__name__,
@@ -127,6 +82,53 @@ class Base(object):
             result['recurse'] = True
 
         return result
+
+class BasePlus(Base):
+    @classmethod
+    def for_id(cls, id):
+        if id is None: return cls()
+        if isinstance(id, cls): #allows some shortcuts
+            return id
+
+        # for the query below to be cached correctly by sqlalchemy,
+        # the id needs to be an int
+        try:
+            id = int(id)
+        except ValueError:
+            pass
+        try:
+            value = cls.query.get(id)
+            if value is None: value = cls()
+            return value
+        except NoResultFound, e:
+            return cls()
+
+    @staticmethod
+    def for_type_id(type_id):
+        """Returns a object constructed for the given type"""
+        return getattr(__import__('openmile.model', globals(), locals(), [str(type_id[0])]), type_id[0]).for_id(type_id[1])
+
+    @staticmethod
+    def cls(type):
+        return getattr(__import__('openmile.model', globals(), locals(), [str(type)]), type)
+
+class SessionBase(object):
+    @classproperty
+    @classmethod
+    def query(cls):
+        return cls.db_session().query(cls)
+
+    @classmethod
+    def db_session(cls):
+        return cls.__db_session__
+
+    def add(self):
+        self.db_session().add(self)
+        return self
+
+    def delete(self):
+        self.db_session().delete(self)
+        return self
 
 class Timestamp(object):
     created_at = Column(tt.DateTime(), nullable=False, default=datetime.utcnow)
