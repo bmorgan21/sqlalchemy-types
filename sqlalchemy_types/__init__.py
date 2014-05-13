@@ -13,6 +13,12 @@ class classproperty(property):
     def __get__(self, cls, owner):
         return self.fget.__get__(None, owner)()
 
+first_cap_re = re.compile('(.)([A-Z][a-z]+)')
+all_cap_re = re.compile('([a-z0-9])([A-Z])')
+def convert_to_underscore(name):
+    s1 = first_cap_re.sub(r'\1_\2', name)
+    return all_cap_re.sub(r'\1_\2', s1).lower()
+
 class Base(object):
     __polymorphic__ = None
 
@@ -20,7 +26,7 @@ class Base(object):
     def __tablename__(cls):
         if has_inherited_table(cls):
             return None
-        return cls.__name__.lower()
+        return convert_to_underscore(cls.__name__)
 
     @declared_attr
     def row_type(cls):
