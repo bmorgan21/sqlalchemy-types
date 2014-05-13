@@ -78,7 +78,7 @@ class Type(Integer):
     def __init__(self, choices, *args, **kwargs):
         self.choices = choices
         kwargs.setdefault('validator', vv.Type(choices))
-        Integer.__init__(self, 64, *args, **kwargs)
+        Integer.__init__(self, *args, **kwargs)
 
 class PhoneNumber(Unicode):
     def __init__(self, *args, **kwargs):
