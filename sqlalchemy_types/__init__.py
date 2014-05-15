@@ -156,8 +156,8 @@ class Validate(object):
                 raise Exception('%s.%s is readonly' % (self.__class__.__name__, key))
 
         value_changed = True
-        if self.__mapper__.class_manager.has_key(key):
-            attribute = self.__mapper__.class_manager.get(key)
+        attribute = self.__mapper__.class_manager.get(key)
+        if attribute is not None and hasattr(attribute, 'type'):
             try:
                 value = attribute.type.validator.to_python(value)
             except AttributeError as exc:
@@ -189,12 +189,13 @@ class Validate(object):
         self._default()
 
         for key, attribute  in self.__mapper__.class_manager.items():
-            value = getattr(self, key)
-            if not attribute.nullable and self.is_empty(attribute.default) and \
-               not attribute.primary_key and self.is_empty(value) and len(attribute.foreign_keys)==0:
-                errors[key] = ValidationException('Please enter a value',
-                                                  field=key,
-                                                  table=self.__class__.__name__)
+            if hasattr(attribute, 'type'):
+                value = getattr(self, key)
+                if not attribute.nullable and self.is_empty(attribute.default) and \
+                   not attribute.primary_key and self.is_empty(value) and len(attribute.foreign_keys)==0:
+                    errors[key] = ValidationException('Please enter a value',
+                                                      field=key,
+                                                      table=self.__class__.__name__)
 
         if not errors:
             try:
