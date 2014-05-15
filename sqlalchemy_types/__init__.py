@@ -156,10 +156,10 @@ class Validate(object):
                 raise Exception('%s.%s is readonly' % (self.__class__.__name__, key))
 
         value_changed = True
-        if self.__table__.columns.has_key(key):
-            field = self.__table__.columns.get(key)
+        if self.__mapper__.class_manager.has_key(key):
+            attribute = self.__mapper__.class_manager.get(key)
             try:
-                value = field.type.validator.to_python(value)
+                value = attribute.type.validator.to_python(value)
             except AttributeError as exc:
                 # this column does not have a validator, just let it go through
                 pass
@@ -188,12 +188,13 @@ class Validate(object):
 
         self._default()
 
-        for field in self.__table__.columns:
-            value = getattr(self, field.name)
-            if not field.nullable and self.is_empty(field.default) and not field.primary_key and self.is_empty(value) and len(field.foreign_keys)==0 :
-                errors[field.name] = ValidationException('Please enter a value',
-                                                         field=field.name,
-                                                         table=self.__class__.__name__)
+        for key, attribute  in self.__mapper__.class_manager.items():
+            value = getattr(self, key)
+            if not attribute.nullable and self.is_empty(attribute.default) and \
+               not attribute.primary_key and self.is_empty(value) and len(attribute.foreign_keys)==0:
+                errors[key] = ValidationException('Please enter a value',
+                                                  field=key,
+                                                  table=self.__class__.__name__)
 
         if not errors:
             try:
