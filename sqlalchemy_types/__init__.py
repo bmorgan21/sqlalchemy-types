@@ -10,15 +10,19 @@ import types as tt
 
 from validation.exception import ValidationException
 
+
 class classproperty(property):
     def __get__(self, cls, owner):
         return self.fget.__get__(None, owner)()
 
 first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 all_cap_re = re.compile('([a-z0-9])([A-Z])')
+
+
 def convert_to_underscore(name):
     s1 = first_cap_re.sub(r'\1_\2', name)
     return all_cap_re.sub(r'\1_\2', s1).lower()
+
 
 class Base(object):
     __polymorphic__ = None
@@ -51,6 +55,49 @@ class Base(object):
 
     id = Column(tt.ObjectID(), primary_key=True)
 
+    @property
+    def exists(self):
+        """Returns True when the object has been flushed to the database."""
+        return bool(self.id)
+
+    @property
+    def type_id(self):
+        """Utility method that returns a tuple containing the class name and the id of the object."""
+        return (unicode(self.__class__.__name__), self.id)
+
+    def to_json(self, recurse=None):
+        result = {'id': self.id,
+                  '__class__': self.__class__.__name__,
+                  }
+
+        if recurse is not None and self.__class__ in recurse:
+            result['recurse'] = True
+
+        return result
+
+
+class BaseWithQuery(Base):
+    @classmethod
+    def for_id(cls, id):
+        if id is None:
+            return cls()
+        if isinstance(id, cls):  # allows some shortcuts
+            return id
+
+        # for the query below to be cached correctly by sqlalchemy,
+        # the id needs to be an int
+        try:
+            id = int(id)
+        except ValueError:
+            pass
+        try:
+            value = cls.query.get(id)
+            if value is None:
+                value = cls()
+            return value
+        except NoResultFound:
+            return cls()
+
     @staticmethod
     def create_factory(*field_args, **kwargs):
         @classmethod
@@ -66,58 +113,10 @@ class Base(object):
                 if kwargs.get('uselist', False):
                     return q.all()
                 return q.one()
-            except NoResultFound, e:
+            except NoResultFound:
                 return cls()
         return for_value
 
-    @property
-    def exists(self):
-        """Returns True when the object has been flushed to the database."""
-        return bool(self.id)
-
-    @property
-    def type_id(self):
-        """Utility method that returns a tuple containing the class name and the id of the object."""
-        return (unicode(self.__class__.__name__), self.id)
-
-    def to_json(self, recurse=None):
-        result = {'id':self.id,
-                  '__class__':self.__class__.__name__,
-                  }
-
-        if recurse is not None and self.__class__ in recurse:
-            result['recurse'] = True
-
-        return result
-
-class BasePlus(Base):
-    @classmethod
-    def for_id(cls, id):
-        if id is None: return cls()
-        if isinstance(id, cls): #allows some shortcuts
-            return id
-
-        # for the query below to be cached correctly by sqlalchemy,
-        # the id needs to be an int
-        try:
-            id = int(id)
-        except ValueError:
-            pass
-        try:
-            value = cls.query.get(id)
-            if value is None: value = cls()
-            return value
-        except NoResultFound, e:
-            return cls()
-
-    @staticmethod
-    def for_type_id(type_id):
-        """Returns a object constructed for the given type"""
-        return getattr(__import__('openmile.model', globals(), locals(), [str(type_id[0])]), type_id[0]).for_id(type_id[1])
-
-    @staticmethod
-    def cls(type):
-        return getattr(__import__('openmile.model', globals(), locals(), [str(type)]), type)
 
 class SessionBase(object):
     @classproperty
@@ -137,14 +136,16 @@ class SessionBase(object):
         self.db_session().delete(self)
         return self
 
+
 class Timestamp(object):
     created_at = Column(tt.DateTime(), nullable=False, default=datetime.utcnow)
     last_updated = Column(tt.DateTime(), nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+
 class Validate(object):
     def __setattr__(self, key, value):
         if isinstance(value, Base):
-            if not value in self.db_session():
+            if value not in self.db_session():
                 raise Exception('assigned object isn\'t added to session [%s]' % key)
 
         if hasattr(self, '__read_only__'):
@@ -160,7 +161,7 @@ class Validate(object):
         if attribute is not None and hasattr(attribute, 'type'):
             try:
                 value = attribute.type.validator.to_python(value)
-            except AttributeError as exc:
+            except AttributeError:
                 # this column does not have a validator, just let it go through
                 pass
             current_value = getattr(self, key)
@@ -188,11 +189,11 @@ class Validate(object):
 
         self._default()
 
-        for key, attribute  in self.__mapper__.class_manager.items():
+        for key, attribute in self.__mapper__.class_manager.items():
             if hasattr(attribute, 'type'):
                 value = getattr(self, key)
                 if not attribute.nullable and self.is_empty(attribute.default) and \
-                   not attribute.primary_key and self.is_empty(value) and len(attribute.foreign_keys)==0:
+                   not attribute.primary_key and self.is_empty(value) and len(attribute.foreign_keys) == 0:
                     errors[key] = ValidationException('Please enter a value',
                                                       field=key,
                                                       table=self.__class__.__name__)
