@@ -139,7 +139,7 @@ class SessionBase(object):
 
 class Timestamp(object):
     created_at = Column(tt.DateTime(), nullable=False, default=datetime.utcnow)
-    last_updated = Column(tt.DateTime(), nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    modified_at = Column(tt.DateTime(), nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class Validate(object):
