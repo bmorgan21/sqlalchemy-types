@@ -144,9 +144,9 @@ class Timestamp(object):
 
 class Validate(object):
     def __setattr__(self, key, value):
-        if isinstance(value, Base):
-            if value not in self.db_session():
-                raise Exception('assigned object isn\'t added to session [%s]' % key)
+        # if isinstance(value, Base):
+        #     if value not in self.db_session():
+        #         raise Exception('assigned object isn\'t added to session [%s]' % key)
 
         if hasattr(self, '__read_only__'):
             if key.startswith('__') and key.endswith('__'):
