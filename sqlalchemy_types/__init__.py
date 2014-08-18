@@ -78,7 +78,7 @@ class Base(object):
 
 class BaseWithQuery(Base):
     @classmethod
-    def for_id(cls, id):
+    def for_id(cls, id, options=None):
         if id is None:
             return cls()
         if isinstance(id, cls):  # allows some shortcuts
@@ -91,7 +91,11 @@ class BaseWithQuery(Base):
         except ValueError:
             pass
         try:
-            value = cls.query.get(id)
+            query = cls.query
+            if options:
+                query = query.options(*options)
+
+            value = query.get(id)
             if value is None:
                 value = cls()
             return value
@@ -109,6 +113,10 @@ class BaseWithQuery(Base):
                     if isinstance(value, str):
                         value = unicode(value)
                     q = q.filter(getattr(cls, field) == value)
+
+                options = kwargs.get('options')
+                if options:
+                    q = q.options(*options)
 
                 if kwargs.get('uselist', False):
                     return q.all()
