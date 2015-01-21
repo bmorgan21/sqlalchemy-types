@@ -174,6 +174,8 @@ class Validate(object):
                 pass
             current_value = getattr(self, key)
             value_changed = value != current_value
+            if value_changed:
+                self.changed(key, current_value, value)
 
         if value_changed:
             is_set = False
@@ -190,6 +192,9 @@ class Validate(object):
 
             if not is_set:
                 object.__setattr__(self, key, value)
+
+    def changed(self, key, old_value, new_value):
+        pass
 
     def is_empty(self, value):
         # None and '' are "empty"
