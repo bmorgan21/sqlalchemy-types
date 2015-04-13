@@ -1,7 +1,7 @@
 from datetime import datetime
 import re
 
-from sqlalchemy import Column, event
+from sqlalchemy import Column, event, exists
 from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declared_attr, has_inherited_table
 from sqlalchemy.orm.exc import NoResultFound
@@ -131,6 +131,11 @@ class SessionBase(object):
     @classmethod
     def query(cls):
         return cls.db_session().query(cls)
+
+    @classmethod
+    def exists_by_id(cls, id):
+        """Returns True if the object exists in the database."""
+        return cls.db_session().query(exists().where(cls.id == id)).scalar()
 
     @classmethod
     def db_session(cls):
