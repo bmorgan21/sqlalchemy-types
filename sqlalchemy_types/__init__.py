@@ -60,6 +60,11 @@ class Base(object):
         """Returns True when the object has been flushed to the database."""
         return bool(self.id)
 
+    @classmethod
+    def exists_by_id(cls, session, id):
+        """Returns True if the object exists in the database."""
+        return session.query(exists().where(cls.id == id)).scalar()
+
     @property
     def type_id(self):
         """Utility method that returns a tuple containing the class name and the id of the object."""
@@ -131,11 +136,6 @@ class SessionBase(object):
     @classmethod
     def query(cls):
         return cls.db_session().query(cls)
-
-    @classmethod
-    def exists_by_id(cls, id):
-        """Returns True if the object exists in the database."""
-        return cls.db_session().query(exists().where(cls.id == id)).scalar()
 
     @classmethod
     def db_session(cls):
