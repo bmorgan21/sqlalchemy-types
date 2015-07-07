@@ -197,10 +197,8 @@ class Validate(object):
             if not is_set:
                 object.__setattr__(self, key, value)
 
-            try:
+            if hasattr(self, 'changed'):
                 self.changed(key, current_value, value)
-            except Exception:
-                pass
 
     def is_empty(self, value):
         # None and '' are "empty"
