@@ -1,7 +1,7 @@
 from datetime import datetime
 import re
 
-from sqlalchemy import Column, event, exists
+from sqlalchemy import Column, ForeignKey, event, exists
 from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declared_attr, has_inherited_table
 from sqlalchemy.orm.exc import NoResultFound
@@ -9,6 +9,19 @@ from sqlalchemy.orm.exc import NoResultFound
 import types as tt
 
 from validation.exception import ValidationException
+
+
+def _get_parent_table_class(cls):
+    if not has_inherited_table(cls):
+        #  Safety against recursion
+        return None
+
+    base_classes = [b for b in cls.__bases__ if b.__tablename__]
+    if len(base_classes) > 1:
+        #  For simplicity at present, only allow join configurations IFF there's only one parent table class
+        raise Exception('Can only inherit from one base class with defined table')
+
+    return base_classes[0]
 
 
 class classproperty(property):
@@ -29,9 +42,23 @@ class Base(object):
 
     @declared_attr
     def __tablename__(cls):
+
+        table_name = None
+
         if has_inherited_table(cls):
-            return None
-        return convert_to_underscore(cls.__name__)
+            if cls.__polymorphic__ == 'single':
+                #  Single implies we are extending an existing table
+                #  in which case SQLAlchemy should not be provided a new one
+                return None
+            elif cls.__polymorphic__ == 'join':
+                parent = _get_parent_table_class(cls)
+                table_name = "{}{}".format(parent.__name__, cls.__name__)
+                # hack to make sure we can redefine id in a subclass
+                cls.id = Column(tt.ObjectID(), ForeignKey("{}.id".format(parent.__tablename__)), primary_key=True)
+        else:
+            table_name = cls.__name__
+
+        return convert_to_underscore(table_name)
 
     @declared_attr
     def row_type(cls):
@@ -50,10 +77,12 @@ class Base(object):
         if not has_inherited_table(cls) and cls.__polymorphic__:
             ret['polymorphic_on'] = cls.row_type
         elif has_inherited_table(cls) and not cls.__polymorphic__:
-            raise Exception('Please specify __polymorphic__=\'single\' on base class')
+            raise Exception('Please specify __polymorphic__=\'single\' or __polymorphic__=\'join\' on base class')
         return ret
 
-    id = Column(tt.ObjectID(), primary_key=True)
+    @declared_attr
+    def id(cls):
+        return Column(tt.ObjectID(), primary_key=True)
 
     @property
     def exists(self):
