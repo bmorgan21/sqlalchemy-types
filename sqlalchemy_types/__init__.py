@@ -39,6 +39,7 @@ def convert_to_underscore(name):
 
 class Base(object):
     __polymorphic__ = None
+    __immutable__ = False
 
     @declared_attr
     def __tablename__(cls):
@@ -108,6 +109,14 @@ class Base(object):
             result['recurse'] = True
 
         return result
+
+    @classmethod
+    def before_flush(cls, session, flush_context, instances):
+        for obj in session.dirty | session.deleted:
+            if isinstance(obj, cls) and cls.__immutable__:
+                raise Exception('Object is immutable: {}'.format(cls.__name__))
+
+event.listen(Session, 'before_flush', Base.before_flush)
 
 
 class BaseWithQuery(Base):
