@@ -54,7 +54,7 @@ class Column(OrigColumn):
                     default = default
                 elif default is None:
                     default = text('NULL')
-                elif default == datetime.datetime.utcnow:
+                elif default == datetime.utcnow:
                     default = text('CURRENT_TIMESTAMP')
                 else:
                     raise Exception('Unable to infer a valid server_default from default: {}'.format(default))
