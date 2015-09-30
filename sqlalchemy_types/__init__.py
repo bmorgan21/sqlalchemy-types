@@ -3,6 +3,7 @@ import re
 
 from sqlalchemy import Column, ForeignKey, event, exists
 from sqlalchemy.orm.session import Session
+from sqlalchemy.sql.expression import text
 from sqlalchemy.ext.declarative import declared_attr, has_inherited_table
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -35,6 +36,30 @@ all_cap_re = re.compile('([a-z0-9])([A-Z])')
 def convert_to_underscore(name):
     s1 = first_cap_re.sub(r'\1_\2', name)
     return all_cap_re.sub(r'\1_\2', s1).lower()
+
+
+OrigColumn = Column
+
+
+class Column(OrigColumn):
+    def __init__(self, *args, **kwargs):
+        if 'default' in kwargs:
+            if 'server_default' not in kwargs:
+                default = kwargs['default']
+                if isinstance(default, bool):
+                    default = '1' if default else '0'
+                elif isinstance(default, int):
+                    default = str(default)
+                elif isinstance(default, (str, unicode)):
+                    default = default
+                elif default is None:
+                    default = text('NULL')
+                elif default == datetime.datetime.utcnow:
+                    default = text('CURRENT_TIMESTAMP')
+                else:
+                    raise Exception('Unable to infer a valid server_default from default: {}'.format(default))
+                kwargs['server_default'] = default
+        OrigColumn.__init__(self, *args, **kwargs)
 
 
 class Base(object):
