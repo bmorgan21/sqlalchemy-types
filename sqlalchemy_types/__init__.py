@@ -285,12 +285,12 @@ class Validate(object):
 
         for key, attribute in self.__mapper__.class_manager.items():
             if hasattr(attribute, 'type'):
-                value = getattr(self, key)
-                if not attribute.nullable and self.is_empty(attribute.default) and \
-                   not attribute.primary_key and self.is_empty(value) and len(attribute.foreign_keys) == 0:
-                    errors[key] = ValidationException('Please enter a value',
-                                                      field=key,
-                                                      table=self.__class__.__name__)
+                if not attribute.nullable and self.is_empty(attribute.default) and not attribute.primary_key and len(attribute.foreign_keys) == 0:
+                    value = getattr(self, key)
+                    if self.is_empty(value):
+                        errors[key] = ValidationException('Please enter a value',
+                                                          field=key,
+                                                          table=self.__class__.__name__)
 
         if not errors:
             try:
