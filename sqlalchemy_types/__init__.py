@@ -9,7 +9,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 import types as tt
 
-from validation.exception import ValidationException
+from validation21.exception import ValidationException
 
 
 def _get_parent_table_class(cls):

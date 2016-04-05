@@ -2,13 +2,14 @@ from distutils.core import setup
 
 setup(
     name='SQLAlchemyTypes',
-    version='0.1.0',
+    packages=['sqlalchemy_types'],
+    version='0.2.0',
+    description='More detailed types for model definitions.',
     author='Brian S Morgan',
     author_email='brian.s.morgan@gmail.com',
-    packages=['sqlalchemy_types'],
     url='https://github.com/bmorgan21/sqlalchemy-types',
-    description='More detailed types for model definitions.',
     install_requires=[
-        'validation>=0.1.0'
+        'SQLAlchemy>=1.0.8',
+        'validation21>=0.2.1'
     ]
 )
