@@ -94,7 +94,7 @@ class Base(object):
         if 'row_type' in cls.__dict__:
             return cls.row_type
         else:
-            cls.row_type = d = Column('row_type', tt.Unicode(50))
+            cls.row_type = d = Column('row_type', tt.Unicode(50), index=True)
             return d
 
     @declared_attr
