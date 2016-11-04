@@ -241,6 +241,9 @@ class Validate(object):
             except AttributeError:
                 # this column does not have a validator, just let it go through
                 pass
+            except ValidationException, e:
+                e.field = key
+                raise
             current_value = getattr(self, key)
             value_changed = value != current_value
 

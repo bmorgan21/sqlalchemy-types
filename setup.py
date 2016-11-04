@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name='SQLAlchemyTypes',
     packages=['sqlalchemy_types'],
-    version='0.2.1',
+    version='0.2.2',
     description='More detailed types for model definitions.',
     author='Brian S Morgan',
     author_email='brian.s.morgan@gmail.com',
