@@ -47,9 +47,13 @@ class Column(OrigColumn):
             if 'server_default' not in kwargs:
                 default = kwargs['default']
                 if isinstance(default, bool):
-                    default = '1' if default else '0'
-                elif isinstance(default, int):
-                    default = str(default)
+                    default = "'1'" if default else "'0'"
+                elif isinstance(default, (int, float)):
+                    scale = getattr(args[0], 'scale', None)
+                    if scale:
+                        default = "'{{:.{}f}}'".format(scale).format(default)
+                    else:
+                        default = "'{}'".format(default)
                 elif isinstance(default, (str, unicode)):
                     default = default
                 elif default is None:
